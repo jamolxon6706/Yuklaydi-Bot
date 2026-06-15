@@ -1,0 +1,172 @@
+version: "3.9"
+
+services:
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
+    environment:
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
+      TELEGRAM_LOCAL: 1
+    volumes:
+      - downloads:/downloads
+      - telegram_data:/var/lib/telegram-bot-api
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: bot
+      POSTGRES_PASSWORD: bot_password
+      POSTGRES_DB: yuklaydi_bot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bot -d yuklaydi_bot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PgBouncer: transaction-mode pool — prevents worker replicas from
+  # exhausting Postgres max_connections (default ~100).
+  # Workers connect to pgbouncer:5432; PgBouncer holds a small pool to Postgres.
+  pgbouncer:
+    image: bitnami/pgbouncer:latest
+    environment:
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_USERNAME: bot
+      POSTGRESQL_PASSWORD: bot_password
+      POSTGRESQL_DATABASE: yuklaydi_bot
+      PGBOUNCER_DATABASE: yuklaydi_bot
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_MAX_CLIENT_CONN: 500
+      PGBOUNCER_DEFAULT_POOL_SIZE: 20
+      PGBOUNCER_MIN_POOL_SIZE: 5
+      PGBOUNCER_RESERVE_POOL_SIZE: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432 -U bot || true"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    # allkeys-lru: evict least-recently-used keys when maxmemory is reached
+    # — file_id cache can grow large; LRU keeps hot content in memory
+    command: >
+      redis-server
+      --save 60 1
+      --loglevel warning
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  bot:
+    build: .
+    command: python -m bot.main
+    env_file: .env
+    environment:
+      LOCAL_API_URL: http://telegram-bot-api:8081
+      # Route through PgBouncer for connection pooling
+      DATABASE_URL: postgresql+asyncpg://bot:bot_password@pgbouncer:5432/yuklaydi_bot
+      REDIS_URL: redis://redis:6379/0
+      DOWNLOAD_DIR: /downloads
+    volumes:
+      - downloads:/downloads
+    depends_on:
+      telegram-bot-api:
+        condition: service_started
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Download worker — handles arq:queue (video downloads)
+  worker:
+    build: .
+    command: arq bot.worker.tasks.WorkerSettings
+    env_file: .env
+    environment:
+      LOCAL_API_URL: http://telegram-bot-api:8081
+      DATABASE_URL: postgresql+asyncpg://bot:bot_password@pgbouncer:5432/yuklaydi_bot
+      REDIS_URL: redis://redis:6379/0
+      DOWNLOAD_DIR: /downloads
+      WORKER_CONCURRENCY: 5
+    volumes:
+      - downloads:/downloads
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+
+  # Recognition worker — separate lane for Shazam/voice recognition
+  worker-recognition:
+    build: .
+    command: arq bot.worker.tasks.RecognitionWorkerSettings
+    env_file: .env
+    environment:
+      LOCAL_API_URL: http://telegram-bot-api:8081
+      DATABASE_URL: postgresql+asyncpg://bot:bot_password@pgbouncer:5432/yuklaydi_bot
+      REDIS_URL: redis://redis:6379/0
+      DOWNLOAD_DIR: /downloads
+    volumes:
+      - downloads:/downloads
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+
+  # Music worker — separate lane for music search downloads
+  worker-music:
+    build: .
+    command: arq bot.worker.tasks.MusicWorkerSettings
+    env_file: .env
+    environment:
+      LOCAL_API_URL: http://telegram-bot-api:8081
+      DATABASE_URL: postgresql+asyncpg://bot:bot_password@pgbouncer:5432/yuklaydi_bot
+      REDIS_URL: redis://redis:6379/0
+      DOWNLOAD_DIR: /downloads
+    volumes:
+      - downloads:/downloads
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+
+volumes:
+  downloads:
+  postgres_data:
+  redis_data:
+  telegram_data:

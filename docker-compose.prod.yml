@@ -1,0 +1,41 @@
+version: "3.9"
+
+# Production overrides — use with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  telegram-bot-api:
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  postgres:
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?DB password required}
+      POSTGRES_DB: ${POSTGRES_DB:-yuklaydi_bot}
+
+  redis:
+    restart: always
+    command: redis-server --save 60 1 --requirepass ${REDIS_PASSWORD:-}
+
+  bot:
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  worker:
+    restart: always
+    deploy:
+      replicas: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
