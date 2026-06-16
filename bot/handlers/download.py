@@ -13,7 +13,7 @@ from bot.logger import logger
 from bot.services.cache import (
     get_active_downloads, get_file_id, get_queue_depth,
     get_url_by_key, get_video_for_shazam,
-    set_file_id, store_url_key, store_video_for_shazam,
+    store_url_key, store_video_for_shazam,
 )
 from bot.services.downloader import detect_platform, normalize_url
 

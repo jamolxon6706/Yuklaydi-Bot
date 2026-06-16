@@ -3,10 +3,7 @@ from __future__ import annotations
 import asyncio
 import csv
 import io
-import os
-import tempfile
 from datetime import datetime
-from typing import Optional
 
 from aiogram import Bot, Router
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
@@ -14,13 +11,13 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     BufferedInputFile, CallbackQuery, InlineKeyboardButton,
-    InlineKeyboardMarkup, InputMediaPhoto, InputMediaVideo, Message,
+    Message,
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.config import settings
 from bot.db.repo import (
-    DownloadRepo, MusicSearchRepo, RecognitionRepo, SettingRepo,
+    DownloadRepo, SettingRepo,
     UserRepo, WelcomeRepo,
 )
 from bot.handlers.states import AdminFSM
@@ -244,6 +241,7 @@ async def _show_broadcast_preview(msg_or_obj, user_id: int, state: FSMContext, b
     bc = data.get("broadcast", {})
 
     # Get recipient count
+    recipient_count: int | str
     try:
         from bot.db.session import async_session_factory
         async with async_session_factory() as session:
@@ -261,7 +259,7 @@ async def _show_broadcast_preview(msg_or_obj, user_id: int, state: FSMContext, b
 
     # Show preview
     preview_header = f"👁 <b>Ko'rinishi (preview):</b>\n📤 Qabul qiluvchilar: <b>{recipient_count}</b>\n\n"
-    preview_note = await msg_or_obj.answer(preview_header, parse_mode="HTML")
+    await msg_or_obj.answer(preview_header, parse_mode="HTML")
 
     try:
         await bot.copy_message(
@@ -410,11 +408,9 @@ async def fsm_welcome_new_text(message: Message, state: FSMContext):
         await message.answer("❌ Matn bo'sh bo'lmasligi kerak.")
         return
 
-    data = await state.get_data()
     await state.update_data(welcome_new_text=new_text)
     await state.set_state(AdminFSM.welcome_confirm)
 
-    lang = data.get("welcome_lang", "uz")
     preview = new_text.replace("{first_name}", "Ali").replace("{username}", "@ali")
 
     await message.answer(
@@ -437,7 +433,6 @@ async def fsm_welcome_save(callback: CallbackQuery, state: FSMContext):
 
     try:
         from bot.db.session import async_session_factory
-        from bot.services.cache import invalidate_setting
         async with async_session_factory() as session:
             await WelcomeRepo(session).set(lang, text)
     except Exception as e:
@@ -627,7 +622,7 @@ async def fsm_channel_set(message: Message, state: FSMContext):
         invite = f"https://t.me/{chat.username}" if chat.username else ""
 
         from bot.db.session import async_session_factory
-        from bot.services.cache import invalidate_setting, set_setting_cache
+        from bot.services.cache import invalidate_setting
         async with async_session_factory() as session:
             repo = SettingRepo(session)
             await repo.set("required_channel_id", str(chat.id))

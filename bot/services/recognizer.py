@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import Optional
 
+import shazamio
 from shazamio import Shazam
 
 from bot.logger import logger
 from bot.services.media import extract_audio_snippet, get_temp_path, probe_duration, safe_delete
 
+_shazamio_version = getattr(shazamio, "__version__", "unknown")
+logger.info(f"[shazam] shazamio version={_shazamio_version}")
 _shazam = Shazam()
+logger.info(f"[shazam] Shazam() initialised — core_recognizer={type(_shazam.core_recognizer).__name__}")
 
 
 class SongResult:
@@ -36,14 +41,30 @@ async def _try_recognize_snippet(media_path: str, snippet_path: str,
     """Extract snippet at given start/duration and try to recognize it."""
     await extract_audio_snippet(media_path, snippet_path, snippet_duration=duration, start_override=start)
     size = os.path.getsize(snippet_path) if os.path.exists(snippet_path) else 0
-    logger.info(f"Shazam snippet: start={start:.1f}s dur={duration}s size={size}B path={snippet_path}")
+    logger.debug(f"[shazam] snippet: start={start:.1f}s dur={duration}s size={size}B path={snippet_path!r}")
     if size < 1000:
-        logger.warning(f"Snippet too small ({size}B), skipping")
+        logger.warning(f"[shazam] snippet too small ({size}B), skipping window")
         return None
-    result = await _shazam.recognize(snippet_path)
-    parsed = _parse_result(result)
+
+    t0 = time.monotonic()
+    try:
+        logger.debug(f"[shazam] calling _shazam.recognize({snippet_path!r})")
+        raw_result = await _shazam.recognize(snippet_path)
+        elapsed = time.monotonic() - t0
+        matches = raw_result.get("matches", [])
+        logger.debug(f"[shazam] recognize() returned in {elapsed:.2f}s — matches={len(matches)} has_track={'track' in raw_result}")
+        if not matches and "track" not in raw_result:
+            logger.debug(f"[shazam] full raw response={raw_result}")
+    except Exception as exc:
+        elapsed = time.monotonic() - t0
+        logger.error(f"[shazam] recognize() RAISED after {elapsed:.2f}s: {type(exc).__name__}: {exc}", exc_info=True)
+        return None
+
+    parsed = _parse_result(raw_result)
     if parsed:
-        logger.info(f"Shazam found: {parsed.title} — {parsed.artist} (start={start:.1f}s)")
+        logger.info(f"[shazam] FOUND: {parsed.title!r} — {parsed.artist!r} (start={start:.1f}s)")
+    else:
+        logger.debug(f"[shazam] no match for window start={start:.1f}s dur={duration}s")
     return parsed
 
 

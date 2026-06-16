@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, Optional
+from typing import Optional
 
 import redis.asyncio as aioredis
 
@@ -86,7 +86,7 @@ async def check_rate_limit(tg_id: int) -> tuple[bool, int]:
 
 # ── Music search cache ────────────────────────────────────────────────────────
 
-def _mskey(query: str) -> str:
+def _mskey(query: str) -> tuple[str, str]:
     h = hashlib.sha256(query.lower().strip().encode()).hexdigest()[:16]
     return h, f"ms:{h}"
 
@@ -112,7 +112,8 @@ async def get_music_search_by_hash(qhash: str) -> Optional[list]:
 
 async def store_video_for_shazam(file_id: str, file_suffix: str = ".mp4",
                                  source_url: str = "") -> str:
-    import hashlib, time
+    import hashlib
+    import time
     key = hashlib.md5(f"{file_id}{time.time()}".encode()).hexdigest()[:10]
     r = await get_redis()
     payload: dict = {"fid": file_id, "suf": file_suffix}

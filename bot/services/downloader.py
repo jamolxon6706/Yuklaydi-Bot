@@ -12,7 +12,6 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 import yt_dlp
 
 from bot.config import settings
-from bot.logger import logger
 
 # ── Platform detection ────────────────────────────────────────────────────────
 

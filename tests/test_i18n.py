@@ -4,7 +4,6 @@ lang persistence, no hardcoded user-facing English strings in handler dicts.
 """
 from __future__ import annotations
 
-import pytest
 
 
 LANGS = ("uz", "ru", "en")
@@ -127,7 +126,7 @@ def test_download_errors_have_all_langs():
 def test_keyboard_labels_have_all_langs():
     """Keyboard label dicts must cover all three languages."""
     from bot.keyboards.inline import (
-        LANG_FLAGS, LISTEN_LABELS, LYRICS_LABELS,
+        LISTEN_LABELS, LYRICS_LABELS,
         FIND_SONG_LABELS, MP3_LABELS, DL_SONG_LABELS,
         RETRY_LABELS, SUBSCRIBED_LABELS,
     )

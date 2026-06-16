@@ -4,7 +4,6 @@ no secrets in logs, fuzz inputs don't crash, temp file cleanup.
 """
 from __future__ import annotations
 
-import html
 import os
 import re
 import tempfile
@@ -85,7 +84,7 @@ def test_secrets_not_in_source():
 @pytest.mark.asyncio
 async def test_setting_repo_uses_parameterized_queries():
     """SettingRepo.set must pass user input as bind params, never as raw SQL."""
-    from unittest.mock import AsyncMock, MagicMock, call
+    from unittest.mock import AsyncMock
     from bot.db.repo import SettingRepo
 
     mock_session = AsyncMock()

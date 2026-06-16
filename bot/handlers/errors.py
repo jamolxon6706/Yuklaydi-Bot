@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from aiogram import Router
-from aiogram.types import ErrorEvent
+from aiogram.types import ErrorEvent, InaccessibleMessage, Message
 
 from bot.logger import logger
 
@@ -20,14 +20,14 @@ async def global_error_handler(event: ErrorEvent):
     try:
         update = event.update
         lang = "en"
-        msg = None
+        msg: Message | InaccessibleMessage | None = None
 
         if update.message:
             msg = update.message
         elif update.callback_query:
             msg = update.callback_query.message
 
-        if msg:
+        if isinstance(msg, Message):
             await msg.answer(GENERIC_ERRORS.get(lang, GENERIC_ERRORS["en"]))
     except Exception as e:
         logger.error(f"Error in error handler: {e}")

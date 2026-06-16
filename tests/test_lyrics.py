@@ -1,4 +1,3 @@
-import pytest
 from bot.services.lyrics import clean_lyrics, paginate_lyrics
 
 

@@ -89,8 +89,8 @@ async def _search_musixmatch(title: str, artist: str) -> Optional[str]:
             "q_track": title,
             "q_artist": artist,
             "apikey": settings.musixmatch_token,
-            "f_has_lyrics": 1,
-            "page_size": 1,
+            "f_has_lyrics": "1",
+            "page_size": "1",
         }
         async with aiohttp.ClientSession() as session:
             async with session.get(

@@ -1,10 +1,9 @@
 """Tests for the admin panel: gating, broadcast logic, export, stats."""
 from __future__ import annotations
 
-import asyncio
 import csv
 import io
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

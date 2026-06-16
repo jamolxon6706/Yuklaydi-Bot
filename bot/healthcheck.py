@@ -13,7 +13,6 @@ from __future__ import annotations
 import asyncio
 import shutil
 import sys
-from typing import Optional
 
 # ── Colour helpers ─────────────────────────────────────────────────────────────
 _OK   = "\033[32m[OK  ]\033[0m"
@@ -100,7 +99,9 @@ async def check_postgres() -> None:
         from sqlalchemy import text
         async with engine.connect() as conn:
             row = await conn.execute(text("SELECT current_database(), version()"))
-            db_name, ver = row.fetchone()
+            fetched = row.fetchone()
+            assert fetched is not None
+            db_name, ver = fetched
             ok("Postgres reachable", f"db={db_name}")
             ok("Postgres version", ver.split(",")[0])
 

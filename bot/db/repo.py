@@ -18,7 +18,7 @@ class UserRepo:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def get_or_create(self, tg_id: int, username: str = None, first_name: str = None, lang: str = "uz") -> User:
+    async def get_or_create(self, tg_id: int, username: Optional[str] = None, first_name: Optional[str] = None, lang: str = "uz") -> User:
         result = await self.session.execute(select(User).where(User.tg_id == tg_id))
         user = result.scalar_one_or_none()
         if user is None:
@@ -101,7 +101,7 @@ class UserRepo:
         return r.scalar_one()
 
     async def get_all_ids(self) -> list[int]:
-        r = await self.session.execute(select(User.tg_id).where(User.is_blocked == False))
+        r = await self.session.execute(select(User.tg_id).where(User.is_blocked.is_(False)))
         return list(r.scalars().all())
 
     async def get_all_for_export(self) -> list[User]:
@@ -151,7 +151,7 @@ class DownloadRepo:
         r = await self.session.execute(
             select(func.count()).select_from(Download).where(
                 func.date(Download.created_at) == today,
-                Download.from_cache == True,
+                Download.from_cache.is_(True),
             )
         )
         return r.scalar_one()
@@ -163,7 +163,7 @@ class DownloadRepo:
             .order_by(func.count().desc())
             .limit(limit)
         )
-        return r.fetchall()
+        return list(r.fetchall())
 
     async def inc_daily(self, cache_hit: bool = False) -> None:
         today = date.today()
@@ -225,7 +225,7 @@ class MusicSearchRepo:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def log(self, user_id: int, query: str, picked_index: int = None) -> None:
+    async def log(self, user_id: int, query: str, picked_index: Optional[int] = None) -> None:
         row = MusicSearch(user_id=user_id, query=query, picked_index=picked_index)
         self.session.add(row)
         await self.session.commit()

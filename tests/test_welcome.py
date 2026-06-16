@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import html
-import pytest
 
 from bot.handlers.start import _render, _DEFAULT_WELCOME
 

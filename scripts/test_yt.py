@@ -1,5 +1,8 @@
 """Debug: check what format is selected and measure download speed."""
-import os, sys, tempfile, time
+import os
+import sys
+import tempfile
+import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("BOT_TOKEN", "0:dummy")
 os.environ.setdefault("TELEGRAM_API_ID", "1")

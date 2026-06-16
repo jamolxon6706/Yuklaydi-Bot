@@ -5,7 +5,6 @@ Asserts no ReplyKeyboardMarkup is ever sent.
 """
 from __future__ import annotations
 
-import re
 
 import pytest
 
@@ -33,7 +32,7 @@ def test_reply_module_get_menu_action_returns_none():
 
 def test_no_reply_keyboard_imported_in_handlers():
     """Core handler modules must not import ReplyKeyboardMarkup."""
-    import ast, pathlib, sys
+    import pathlib
 
     bad = []
     handler_dir = pathlib.Path(__file__).parent.parent / "bot" / "handlers"

@@ -1,6 +1,6 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from bot.services.downloader import DownloadError, _download_sync, detect_platform
+from unittest.mock import MagicMock, patch
+from bot.services.downloader import DownloadError, _download_sync
 
 
 def test_download_error_private():

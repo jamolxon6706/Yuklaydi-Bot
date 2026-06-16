@@ -1,7 +1,7 @@
 import os
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from bot.services.recognizer import _parse_result, SongResult
+from bot.services.recognizer import _parse_result
 
 
 def test_parse_result_full():
@@ -128,7 +128,7 @@ async def test_recognize_returns_none_on_empty_snippet():
 @pytest.mark.asyncio
 async def test_recognize_falls_back_to_second_window():
     """If middle window misses, the start window should be tried."""
-    from bot.services.recognizer import recognize, SongResult
+    from bot.services.recognizer import recognize
 
     call_count = [0]
 
@@ -161,7 +161,8 @@ async def test_recognize_falls_back_to_second_window():
 
 def test_handle_media_routes_voice_to_recognition_queue():
     """handle_media must enqueue to arq:queue:recognition, not arq:queue."""
-    import ast, pathlib
+    import ast
+    import pathlib
     src = (pathlib.Path(__file__).parent.parent / "bot" / "handlers" / "shazam.py").read_text(encoding="utf-8")
     tree = ast.parse(src)
 
@@ -204,8 +205,7 @@ def test_handle_media_is_media_filter_covers_all_types():
 @pytest.mark.asyncio
 async def test_store_video_for_shazam_persists_source_url():
     """store_video_for_shazam must store source_url so recognize fallback works."""
-    from unittest.mock import AsyncMock, MagicMock, patch
-    import json
+    from unittest.mock import AsyncMock, patch
 
     stored = {}
 
@@ -228,7 +228,6 @@ async def test_store_video_for_shazam_persists_source_url():
 @pytest.mark.asyncio
 async def test_store_video_for_shazam_without_source_url():
     """store_video_for_shazam without source_url still works (no url key in payload)."""
-    import json
 
     stored = {}
 
@@ -253,7 +252,7 @@ async def test_store_video_for_shazam_without_source_url():
 @pytest.mark.asyncio
 async def test_download_for_recognize_uses_telegram_first():
     """Primary path: download from Telegram if get_file succeeds."""
-    import tempfile, os
+    import tempfile
     from bot.worker.tasks import _download_for_recognize
 
     bot = MagicMock()
@@ -284,7 +283,7 @@ async def test_download_for_recognize_uses_telegram_first():
 @pytest.mark.asyncio
 async def test_download_for_recognize_falls_back_to_yt_dlp():
     """If Telegram get_file fails, fall back to yt-dlp re-download from source_url."""
-    import tempfile, os
+    import tempfile
     from bot.worker.tasks import _download_for_recognize
     from bot.services.downloader import DownloadResult
 

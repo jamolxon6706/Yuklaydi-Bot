@@ -123,7 +123,7 @@ async def main(runs: int, quality: str):
     all_results: list[RunResult] = []
 
     print(f"\n{'=' * 70}")
-    print(f"  vidyuklaydi_bot — Download Speed Benchmark")
+    print("  vidyuklaydi_bot — Download Speed Benchmark")
     print(f"  quality={quality}  runs={runs}  aria2c={'yes' if _has_aria2c() else 'NO (install aria2)'}")
     print(f"{'=' * 70}\n")
 

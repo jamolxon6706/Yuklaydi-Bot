@@ -1,14 +1,12 @@
 """Tests for music search routing, caching, and audio delivery."""
 from __future__ import annotations
 
-import asyncio
-import json
 from dataclasses import asdict
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from bot.services.music_search import SongEntry, clean_title, format_duration, _parse_entry
+from bot.services.music_search import SongEntry, _parse_entry
 
 
 # ── SongEntry helpers ─────────────────────────────────────────────────────────

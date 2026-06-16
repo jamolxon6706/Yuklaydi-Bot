@@ -3,9 +3,8 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import tempfile
 import time
-from typing import Optional
+from typing import Any, Optional
 
 import re
 
@@ -15,7 +14,6 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import BufferedInputFile, FSInputFile
-from arq import ArqRedis
 
 from bot.config import settings
 from bot.logger import logger
@@ -217,6 +215,7 @@ async def download_task(
                 chat_id, audio=input_file,
                 caption="🤖 @vidyuklaydi_bot",
             )
+            assert sent.audio is not None
             file_id = sent.audio.file_id
         else:
             sent = await bot.send_video(
@@ -224,6 +223,7 @@ async def download_task(
                 caption="🤖 @vidyuklaydi_bot",
                 supports_streaming=True,
             )
+            assert sent.video is not None
             file_id = sent.video.file_id
 
         t_upload = time.monotonic() - t_up_start
@@ -322,16 +322,23 @@ async def download_task(
 async def _download_for_recognize(bot: Bot, file_id: str, file_suffix: str,
                                    temp_path: str, source_url: str = "") -> bool:
     """Download media for recognition. Returns True on success."""
+    use_local = settings.use_local_api
+    logger.debug(f"[recognize_dl] file_id={file_id!r} suffix={file_suffix!r} use_local_api={use_local} local_url={settings.local_api_url!r}")
     # Primary path: download from Telegram (works for files ≤ 20 MB on cloud API)
     try:
         file_info = await bot.get_file(file_id)
+        logger.debug(f"[recognize_dl] get_file ok → file_path={file_info.file_path!r} file_size={getattr(file_info,'file_size',None)}")
+        if not file_info.file_path:
+            raise RuntimeError("getFile returned no file_path")
         await bot.download_file(file_info.file_path, destination=temp_path)
         size = os.path.getsize(temp_path) if os.path.exists(temp_path) else 0
+        logger.debug(f"[recognize_dl] download_file → local_size={size}B dest={temp_path!r}")
         if size > 0:
-            logger.info(f"Recognize: downloaded {size//1024}KB from Telegram for {file_id}")
+            logger.debug(f"[recognize_dl] SUCCESS via Telegram ({size//1024}KB)")
             return True
+        logger.warning("[recognize_dl] download succeeded but file is empty")
     except Exception as e:
-        logger.warning(f"Recognize: Telegram getFile failed ({e}), trying source URL fallback")
+        logger.warning(f"[recognize_dl] Telegram getFile FAILED: {type(e).__name__}: {e}")
 
     # Fallback: re-extract audio from original URL via yt-dlp (bypasses 20 MB limit)
     if source_url:
@@ -494,6 +501,7 @@ async def music_download_task(
         )
 
         from bot.services.cache import set_audio_file_id
+        assert sent.audio is not None
         await set_audio_file_id(video_id, sent.audio.file_id)
 
         try:
@@ -544,7 +552,7 @@ class WorkerSettings:
     job_timeout = settings.job_timeout
     keep_result = 60
     # Periodic disk cleanup every hour
-    cron_jobs = []
+    cron_jobs: list[Any] = []
 
 
 class RecognitionWorkerSettings:

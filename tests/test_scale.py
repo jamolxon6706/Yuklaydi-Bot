@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -267,7 +267,6 @@ def test_fid_key_different_inputs():
 
 def test_single_flight_key_matches_fid_key_hash():
     """Single-flight key uses same hashing algorithm as file_id cache key."""
-    import hashlib
     url, quality = "https://youtube.com/watch?v=XYZ", "720"
     expected_hash = hashlib.sha256(f"{url}|{quality}".encode()).hexdigest()
     expected_sf_key = f"sf:{expected_hash}"

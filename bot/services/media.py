@@ -63,17 +63,26 @@ async def probe_duration(input_path: str) -> float:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, _ = await proc.communicate()
-        info = json.loads(stdout)
-        dur = float(info.get("format", {}).get("duration", 0) or 0)
+        stdout, stderr = await proc.communicate()
+        raw = stdout.decode(errors="replace")
+        if proc.returncode != 0:
+            logger.warning(f"[probe] ffprobe error rc={proc.returncode}: {stderr.decode(errors='replace')[:300]}")
+        info = json.loads(raw) if raw.strip() else {}
+        fmt_dur = info.get("format", {}).get("duration", "")
+        dur = float(fmt_dur or 0) if fmt_dur else 0.0
+        source = "format"
         if not dur:
             for stream in info.get("streams", []):
                 stream_dur = stream.get("duration")
                 if stream_dur:
                     dur = float(stream_dur)
+                    source = f"stream[{stream.get('codec_type','?')}]"
                     break
+        fsize = os.path.getsize(input_path) if os.path.exists(input_path) else "missing"
+        logger.debug(f"[probe] {input_path!r} dur={dur:.3f}s src={source} fsize={fsize}B")
         return dur
-    except Exception:
+    except Exception as exc:
+        logger.warning(f"[probe] failed for {input_path!r}: {exc}")
         return 0.0
 
 
@@ -108,6 +117,7 @@ async def extract_audio_snippet(
         "-vn",
         output_path,
     ]
+    logger.debug(f"[snippet] ffmpeg start={start:.1f}s dur={snippet_duration}s → {output_path!r}")
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.DEVNULL,
@@ -115,7 +125,10 @@ async def extract_audio_snippet(
     )
     _, stderr = await proc.communicate()
     if proc.returncode != 0:
-        logger.warning(f"ffmpeg snippet error: {stderr.decode(errors='replace')[:200]}")
+        logger.warning(f"[snippet] ffmpeg error (rc={proc.returncode}): {stderr.decode(errors='replace')[:400]}")
+    else:
+        out_size = os.path.getsize(output_path) if os.path.exists(output_path) else 0
+        logger.debug(f"[snippet] ok size={out_size}B")
     return output_path
 
 

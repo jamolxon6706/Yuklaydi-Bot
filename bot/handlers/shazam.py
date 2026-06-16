@@ -4,7 +4,7 @@ from aiogram import Router
 from aiogram.types import CallbackQuery, Message
 
 from bot.config import settings
-from bot.keyboards.inline import lyrics_nav_keyboard, song_card_keyboard
+from bot.keyboards.inline import lyrics_nav_keyboard
 from bot.logger import logger
 from bot.services.cache import get_song_meta
 from bot.services.lyrics import get_lyrics, paginate_lyrics
