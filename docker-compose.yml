@@ -38,19 +38,19 @@ services:
   # exhausting Postgres max_connections (default ~100).
   # Workers connect to pgbouncer:5432; PgBouncer holds a small pool to Postgres.
   pgbouncer:
-    image: bitnami/pgbouncer:latest
+    image: edoburu/pgbouncer:latest
     environment:
-      POSTGRESQL_HOST: postgres
-      POSTGRESQL_PORT: 5432
-      POSTGRESQL_USERNAME: bot
-      POSTGRESQL_PASSWORD: bot_password
-      POSTGRESQL_DATABASE: yuklaydi_bot
-      PGBOUNCER_DATABASE: yuklaydi_bot
-      PGBOUNCER_POOL_MODE: transaction
-      PGBOUNCER_MAX_CLIENT_CONN: 500
-      PGBOUNCER_DEFAULT_POOL_SIZE: 20
-      PGBOUNCER_MIN_POOL_SIZE: 5
-      PGBOUNCER_RESERVE_POOL_SIZE: 5
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: bot
+      DB_PASSWORD: bot_password
+      DB_NAME: yuklaydi_bot
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 500
+      DEFAULT_POOL_SIZE: 20
+      MIN_POOL_SIZE: 5
+      RESERVE_POOL_SIZE: 5
+      AUTH_TYPE: scram-sha-256
     depends_on:
       postgres:
         condition: service_healthy
