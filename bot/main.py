@@ -48,7 +48,7 @@ _COMMANDS = {
 
 def make_bot() -> Bot:
     if settings.use_local_api:
-        session = AiohttpSession(api=TelegramAPIServer.from_base(settings.local_api_url))
+        session = AiohttpSession(api=TelegramAPIServer.from_base(settings.local_api_url, is_local=True))
         logger.info(f"Using Local Bot API: {settings.local_api_url}")
     else:
         session = AiohttpSession()

@@ -92,6 +92,7 @@ services:
       DOWNLOAD_DIR: /downloads
     volumes:
       - downloads:/downloads
+      - telegram_data:/var/lib/telegram-bot-api:ro
     depends_on:
       telegram-bot-api:
         condition: service_started
@@ -114,6 +115,7 @@ services:
       WORKER_CONCURRENCY: 5
     volumes:
       - downloads:/downloads
+      - telegram_data:/var/lib/telegram-bot-api:ro
     depends_on:
       pgbouncer:
         condition: service_healthy
@@ -135,6 +137,7 @@ services:
       DOWNLOAD_DIR: /downloads
     volumes:
       - downloads:/downloads
+      - telegram_data:/var/lib/telegram-bot-api:ro
     depends_on:
       pgbouncer:
         condition: service_healthy
@@ -156,6 +159,7 @@ services:
       DOWNLOAD_DIR: /downloads
     volumes:
       - downloads:/downloads
+      - telegram_data:/var/lib/telegram-bot-api:ro
     depends_on:
       pgbouncer:
         condition: service_healthy

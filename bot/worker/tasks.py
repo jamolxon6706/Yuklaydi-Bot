@@ -110,7 +110,7 @@ def _make_bot() -> Bot:
     from aiogram.client.default import DefaultBotProperties
     from aiogram.enums import ParseMode
     session = (
-        AiohttpSession(api=TelegramAPIServer.from_base(settings.local_api_url))
+        AiohttpSession(api=TelegramAPIServer.from_base(settings.local_api_url, is_local=True))
         if settings.use_local_api
         else AiohttpSession()
     )

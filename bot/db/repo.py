@@ -110,10 +110,12 @@ class UserRepo:
 
     async def _inc_daily(self, **kwargs) -> None:
         today = date.today()
+        defaults = {"downloads": 0, "recognitions": 0, "new_users": 0,
+                    "searches": 0, "audio_sent": 0, "cache_hits": 0}
+        defaults.update(kwargs)
         stmt = (
             insert(DailyStat)
-            .values(stat_date=today, downloads=0, recognitions=0, new_users=0,
-                    searches=0, audio_sent=0, cache_hits=0, **kwargs)
+            .values(stat_date=today, **defaults)
             .on_conflict_do_update(
                 index_elements=["stat_date"],
                 set_={k: DailyStat.__table__.c[k] + v for k, v in kwargs.items()},
