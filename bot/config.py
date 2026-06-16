@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from typing import List
+from typing_extensions import Annotated
 
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -31,7 +32,7 @@ class Settings(BaseSettings):
     audd_token: str = ""
 
     # Bot config
-    admin_ids: List[int] = []
+    admin_ids: Annotated[List[int], NoDecode] = []
     default_lang: str = "uz"
     max_file_mb: int = 50
     download_dir: str = "./downloads"
