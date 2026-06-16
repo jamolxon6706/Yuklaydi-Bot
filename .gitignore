@@ -9,3 +9,5 @@ downloads/
 *.log
 alembic/versions/
 cookies.txt
+.idea/
+.coverage
