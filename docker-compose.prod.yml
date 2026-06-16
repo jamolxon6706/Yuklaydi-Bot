@@ -20,7 +20,14 @@ services:
 
   redis:
     restart: always
-    command: redis-server --save 60 1 --requirepass ${REDIS_PASSWORD:-}
+    command: >
+      sh -c 'if [ -n "$$REDIS_PASSWORD" ]; then
+        exec redis-server --save 60 1 --requirepass "$$REDIS_PASSWORD";
+      else
+        exec redis-server --save 60 1;
+      fi'
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
 
   bot:
     restart: always
