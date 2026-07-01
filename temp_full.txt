@@ -82,7 +82,6 @@ async def _try_instagram_photo(bot: Bot, chat_id: int, message_id: int, url: str
         logger.warning(f"Instagram photo fallback: {e}")
         return False
 
-
 _DL = {
     "downloading": {"uz": "⏳ Yuklanmoqda...", "ru": "⏳ Скачивается...", "en": "⏳ Downloading..."},
     "uploading":   {"uz": "📤 Yuborilmoqda...", "ru": "📤 Отправляется...", "en": "📤 Uploading..."},
@@ -477,14 +476,10 @@ async def music_download_task(
                 temp_thumb = get_temp_path(suffix=".jpg", prefix="th_")
                 async with aiohttp.ClientSession() as sess:
                     async with sess.get(thumbnail) as resp:
-                        if resp.status == 200:
-                            with open(temp_thumb, "wb") as f:
-                                f.write(await resp.read())
-                            thumb_input = FSInputFile(temp_thumb)
-                        else:
-                            logger.warning(f"Thumbnail download failed with status {resp.status}: {thumbnail}")
-            except Exception as e:
-                logger.warning(f"Failed to download thumbnail: {e}")
+                        with open(temp_thumb, "wb") as f:
+                            f.write(await resp.read())
+                thumb_input = FSInputFile(temp_thumb)
+            except Exception:
                 thumb_input = None
 
         await _safe_edit(bot, chat_id, message_id,

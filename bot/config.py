@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     # Fairness / scale
     per_user_download_cap: int = 3       # max simultaneous fresh downloads per user
     yt_dlp_worker_concurrency: int = 3   # max concurrent yt-dlp calls per worker process
-    job_timeout: int = 90                # arq job hard timeout (seconds)
+    job_timeout: int = 150               # arq job hard timeout (seconds)
     max_queue_depth: int = 2000          # reject new jobs above this depth
 
     # Logging

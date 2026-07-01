@@ -9,6 +9,7 @@ from typing import Optional
 import yt_dlp
 
 from bot.logger import logger
+from bot.services.downloader import classify_download_error, cookies_path, format_selector, youtube_extractor_args
 
 _CLEAN_RE = re.compile(
     r"\b(Official\s+)?(Music\s+)?(Video|Audio|Lyric\s+Video|Visualizer|MV|HD|4K|HQ)\b"
@@ -82,12 +83,18 @@ async def search_songs(query: str, max_results: int = 30) -> list[SongEntry]:
 
 def _download_audio_sync(url: str, output_path: str) -> str:
     opts = {
-        "format": "bestaudio/best",
+        # "bestaudio/best" picks the highest-bitrate stream regardless of
+        # protocol, which on SABR-affected videos means a full 1080p HLS mux
+        # just to throw the video away — minutes of throttled download for a
+        # 3-minute song. Reuse the same https-preferred selector as video.
+        "format": format_selector("mp3"),
         "outtmpl": output_path.replace(".mp3", ""),
         "quiet": True,
         "no_warnings": True,
-        "socket_timeout": 30,
+        "socket_timeout": 20,
         "retries": 3,
+        "fragment_retries": 5,
+        "concurrent_fragment_downloads": 4,
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
@@ -96,9 +103,16 @@ def _download_audio_sync(url: str, output_path: str) -> str:
             }
         ],
         "writethumbnail": False,
+        "extractor_args": youtube_extractor_args(),
     }
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        ydl.download([url])
+    cpath = cookies_path()
+    if cpath:
+        opts["cookiefile"] = cpath
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            ydl.download([url])
+    except yt_dlp.utils.DownloadError as e:
+        raise classify_download_error(e) from e
     return output_path
 
 
